@@ -1,0 +1,26 @@
+# Python virtual environments
+my_n0w_botlet_venv/
+venv/
+.env
+
+# Database files
+bot_data.db
+
+# Log files
+logs/
+*.log
+
+# Service account and client secret files
+client_secrets.json
+service_account_key.json
+new_service_account_key.json
+
+# Python cache
+__pycache__/
+*.pyc
+
+# VS Code settings
+.vscode/
+
+# MacOS system files
+.DS_Store
