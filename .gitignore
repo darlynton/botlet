@@ -1,6 +1,8 @@
 # Python virtual environments
 my_n0w_botlet_venv/
 venv/
+
+# Environment variables
 .env
 
 # Database files
