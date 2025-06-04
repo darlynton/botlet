@@ -681,12 +681,18 @@ def get_pending_reminders() -> list:
         
 def mark_reminder_sent(reminder_id: int) -> bool:
     """Marks a reminder as sent."""
+    try:
+        logger.info(f"mark_reminder_sent called with reminder_id={reminder_id} (type: {type(reminder_id)})")
+        reminder_id = int(reminder_id)
+    except Exception as type_e:
+        logger.error(f"reminder_id type error: {type_e} (value: {reminder_id})")
+        return False
     with ConnectionPool.get_connection() as conn:
         cursor = conn.cursor()
         try:
-            # Ensure atomic update
             cursor.execute("UPDATE reminders SET is_sent = 1 WHERE id = ? AND is_sent = 0", (reminder_id,))
             conn.commit()
+            logger.info(f"UPDATE reminders SET is_sent = 1 WHERE id = {reminder_id} AND is_sent = 0: rowcount={cursor.rowcount}")
             if cursor.rowcount > 0:
                 logger.info(f"Reminder ID {reminder_id} marked as sent.")
                 return True
