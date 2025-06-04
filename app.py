@@ -18,6 +18,7 @@ import json
 import traceback
 import requests
 import sys
+from services.voice_service import VoiceNoteService
 
 # Load environment variables from .env file
 load_dotenv()
@@ -334,7 +335,36 @@ def webhook():
                     )
                 except Exception as e:
                     logger.error(f"Failed to enqueue text message: {e}")
-            elif message_type in ['image', 'document', 'audio', 'video']:
+            elif message_type == 'audio':
+                # WhatsApp voice note/audio message
+                media_id = message.get('audio', {}).get('id')
+                if not media_id:
+                    logger.error(f"Missing media ID for audio message")
+                    return jsonify({'error': 'Invalid audio message'}), 400
+                # Compose the media URL for download
+                media_url = f"https://graph.facebook.com/v19.0/{media_id}"
+                try:
+                    whatsapp_service = WhatsAppService()
+                    vns = VoiceNoteService()
+                    transcript, confidence = vns.handle_voice_note(media_url, from_number)
+                    if transcript:
+                        # Respond with the transcript (already sent by handle_voice_note), now also process as if it was a text message
+                        try:
+                            message_queue.enqueue_message(
+                                user_id=from_number,
+                                message=transcript,
+                                metadata={
+                                    "message_id": message_id,
+                                    "type": "text",
+                                    "from_voice_note": True
+                                }
+                            )
+                        except Exception as e:
+                            logger.error(f"Failed to enqueue transcript as text: {e}")
+                except Exception as e:
+                    logger.error(f"Failed to process voice note: {e}")
+                    whatsapp_service.send_message(from_number, f"Sorry, an error occurred transcribing your voice note: {e}")
+            elif message_type in ['image', 'document', 'video']:
                 media_id = message.get(message_type, {}).get('id')
                 if not media_id:
                     logger.error(f"Missing media ID for {message_type} message")
